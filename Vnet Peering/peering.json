@@ -1,0 +1,103 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "existingHyperExecuteVirtualNetworkName": {
+      "type": "string",
+      "metadata": {
+        "description": "Set the HyperExecute VNet name"
+      }
+    },
+    "existingHyperExecuteVirtualNetworkResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Sets the HyperExecute VNet Resource group"
+      }
+    },
+    "existingRemoteVirtualNetworkName": {
+      "type": "string",
+      "metadata": {
+        "description": "Set the remote VNet name"
+      }
+    },
+    "emrVnetToprodhubPeering": {
+      "type": "string",
+      "defaultValue": "emr-vnet-prod-prodhub-peering-01",
+      "metadata": {
+        "description": "Set the remote VNet name"
+      }
+    },
+    "prodHubToEMRVnetPeering": {
+      "type": "string",
+      "defaultValue": "prodhub-emr-vnet-prod-peering-01",
+      "metadata": {
+        "description": "Set the remote VNet name"
+      }
+    }
+  },
+  "variables": {
+    "resourceGroupName": "[resourceGroup().name]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[parameters('existingHyperExecuteVirtualNetworkResourceGroupName')]",
+      "apiVersion": "2020-10-01",
+      "name": "[guid(parameters('existingHyperExecuteVirtualNetworkName'), parameters('existingHyperExecuteVirtualNetworkResourceGroupName'), 'peering')]",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+              "apiVersion": "2021-02-01",
+              "name": "[format('{0}/{1}', parameters('existingHyperExecuteVirtualNetworkName'),parameters('prodHubToEMRVnetPeering'))]",
+              "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": false,
+                "allowGatewayTransit": false,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                  "id": "[resourceId(variables('resourceGroupName'), 'Microsoft.Network/virtualNetworks', parameters('existingRemoteVirtualNetworkName'))]"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "resourceGroup": "[variables('resourceGroupName')]",
+      "apiVersion": "2020-10-01",
+      "name": "[guid(parameters('existingRemoteVirtualNetworkName'),variables('resourceGroupName'), 'peering')]",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+              "apiVersion": "2021-02-01",
+              "name": "[format('{0}/{1}', variables('resourceGroupName'),parameters('emrVnetToprodhubPeering'))]",
+              "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": false,
+                "allowGatewayTransit": false,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                  "id": "[resourceId(parameters('existingHyperExecuteVirtualNetworkResourceGroupName'), 'Microsoft.Network/virtualNetworks', parameters('existingHyperExecuteVirtualNetworkName'))]"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

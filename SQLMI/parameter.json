@@ -1,0 +1,46 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "managedInstanceName": {
+      "value": "sql-copearcarc-prod-eu01"
+    },
+    "administrators": {
+      "value": {
+        "administratorType": "activeDirectory",
+        "login": "malhabeeb@copehealthsolutions.com",
+        "sid": "bc0a5637-819f-440a-b982-a3e4e324d931",
+        "tenantId": "a2aefdb9-e160-4dc7-ad5b-3dbc67c23815",
+        "azureADOnlyAuthentication": true,
+        "principalType": "User"
+      }
+    },
+    "location": {
+      "value": "east us"
+    },
+    "virtualNetworkName": {
+      "value": "vnet-copearc-prod-eu01"
+    },
+    "addressPrefix": {
+      "value": "10.0.0.0/16"
+    },
+    "subnetName": {
+      "value": "subnet-copearc-prod-eu04"
+    },
+    "subnetPrefix": {
+      "value": "10.0.0.0/24"
+    },
+    "skuName": {
+      "value": "GP_Gen5"
+    },
+    "vCores": {
+      "value": 4
+    },
+    "storageSizeInGB": {
+      "value": 128
+    },
+    "licenseType": {
+      "value": "LicenseIncluded"
+    }
+  }
+}

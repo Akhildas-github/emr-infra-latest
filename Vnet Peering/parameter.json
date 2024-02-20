@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "existingHyperExecuteVirtualNetworkName": {
+      "value": "vnet-copearc-prod-hub-eu01"
+    },
+    "existingHyperExecuteVirtualNetworkResourceGroupName": {
+      "value": "rg-copearc-prod-eu01"
+    },
+    "existingRemoteVirtualNetworkName": {
+      "value": "vnet-emr-copearc-prod-01"
+    }
+  }
+}

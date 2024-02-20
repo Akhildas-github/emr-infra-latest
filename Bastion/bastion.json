@@ -1,0 +1,68 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "bastionHostName": {
+            "type": "String"
+        },
+        "bastionPublicIP": {
+            "type": "String"
+        },
+        "bastionSubnet": {
+            "type": "String"
+        },
+        "virtualNetworkName": {
+            "type": "String"
+        }
+    },
+    "variables": {
+        "bastionSubnetId": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/',parameters('bastionSubnet'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2023-05-01",
+            "name": "[parameters('bastionPublicIP')]",
+            "location": "eastus",
+            "sku": {
+                "name": "Standard",
+                "tier": "Regional"
+            },
+            "properties": {
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Static",
+                "idleTimeoutInMinutes": 4,
+                "ipTags": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/bastionHosts",
+            "apiVersion": "2023-05-01",
+            "name": "[parameters('bastionHostName')]",
+            "location": "eastus",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIpAddresses/', parameters('bastionPublicIP'))]"
+            ],
+            "sku": {
+                "name": "Basic"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "IpConf",
+                        "id": "[concat(resourceId('Microsoft.Network/bastionHosts', parameters('bastionHostName')), '/bastionHostIpConfigurations/IpConf')]",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', parameters('bastionPublicIP'))]"
+                            },
+                            "subnet": {
+                                "id": "[variables('bastionSubnetId')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

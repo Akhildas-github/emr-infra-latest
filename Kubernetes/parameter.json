@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceName": {
+      "value": "aks-emr-copearc-prod-test-01"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "dnsPrefix": {
+      "value": "aks-copearc-prod-test-01-dns"
+    },
+    "osDiskSizeGB": {
+      "value": null
+    },
+    "kubernetesVersion": {
+      "value": "1.26.6"
+    },
+    "networkPlugin": {
+      "value": "kubenet"
+    },
+    "enableRBAC": {
+      "value": true
+    },
+    "vmssNodePool": {
+      "value": true
+    },
+    "windowsProfile": {
+      "value": null
+    },
+    "nodeResourceGroup": {
+      "value": "mrg-aks-emr-copearc-prod-test-01"
+    },
+    "upgradeChannel": {
+      "value": "patch"
+    },
+    "adminGroupObjectIDs": {
+      "value": []
+    },
+    "azureRbac": {
+      "value": null
+    },
+    "disableLocalAccounts": {
+      "value": null
+    },
+    "enablePrivateCluster": {
+      "value": null
+    },
+    "enableAzurePolicy": {
+      "value": null
+    },
+    "enableSecretStoreCSIDriver": {
+      "value": null
+    }
+  }
+}

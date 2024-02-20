@@ -1,0 +1,58 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "name": {
+            "value": "kv-emr-coperac-prodtest1"
+        },
+        "location": {
+            "value": "eastus"
+        },
+        "sku": {
+            "value": "Premium"
+        },
+        "accessPolicies": {
+            "value": [
+                {
+                    "objectId": "1d1109b1-5306-4959-b5b7-51ae4acd31c4",
+                    "tenantId": "a2aefdb9-e160-4dc7-ad5b-3dbc67c23815",
+                    "permissions": {
+                    },
+                    "applicationId": ""
+                }
+            ]
+        },
+        "tenant": {
+            "value": "a2aefdb9-e160-4dc7-ad5b-3dbc67c23815"
+        },
+        "enabledForDeployment": {
+            "value": false
+        },
+        "enabledForTemplateDeployment": {
+            "value": false
+        },
+        "enabledForDiskEncryption": {
+            "value": false
+        },
+        "enableRbacAuthorization": {
+            "value": false
+        },
+        "publicNetworkAccess": {
+            "value": "Enabled"
+        },
+        "enableSoftDelete": {
+            "value": false
+        },
+        "softDeleteRetentionInDays": {
+            "value": 90
+        },
+        "networkAcls": {
+            "value": {
+                "defaultAction": "allow",
+                "bypass": "AzureServices",
+                "ipRules": [],
+                "virtualNetworkRules": []
+            }
+        }
+    }
+}

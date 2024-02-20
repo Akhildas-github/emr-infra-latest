@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vnetName": {
+      "value": "vnet-emr-copearc-prod-01"
+    },
+    "vnetAddressPrefix": {
+      "value": "10.240.11.0/24"
+    },
+    "subnet1Prefix": {
+      "value": "10.240.11.64/28"
+    },
+    "subnet1Name": {
+      "value": "subnet-emr-copearc-prod-01"
+    },
+    "subnet2Prefix": {
+      "value": "10.240.11.80/28"
+    },
+    "subnet2Name": {
+      "value": "subnet-emr-copearc-prod-02"
+    },
+    "subnet3Prefix": {
+      "value": "10.240.11.192/27"
+    },
+    "subnet3Name": {
+      "value": "subnet-emr-copearc-prod-aks-01"
+    },
+    "location": {
+      "value": "east us"
+    }
+  }
+}

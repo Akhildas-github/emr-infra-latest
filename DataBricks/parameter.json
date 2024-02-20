@@ -1,0 +1,33 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspaceName": {
+            "value": "adb-emr-copearc-prod-01"
+        },
+        "location": {
+            "value": "eastus"
+        },
+        "tier": {
+            "value": "standard"
+        },
+        "managedResourceGroupName": {
+            "value": "mrg-emr-adb-copearc-prod-01"
+        },
+        "virtualNetworkName": {
+            "value": "vnet-emr-copearc-prod-01"
+        },
+        "publicSubnetName": {
+            "value": "subnet-emr-copearc-prod-03"
+        },
+        "publicSubnetCIDR": {
+            "value": "10.240.11.0/27"
+        },
+        "privateSubnetName": {
+            "value": "subnet-emr-copearc-prod-04"
+        },
+        "privateSubnetCIDR": {
+            "value": "10.240.11.32/27"
+        }
+    }
+}

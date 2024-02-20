@@ -1,0 +1,75 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "privateEndpoints_uat_adls_pep_name": {
+            "defaultValue": "test-adls-pep1",
+            "type": "String"
+        },
+        "storageAccounts_stemrcopearcprodtest01_externalid": {
+            "defaultValue": "/subscriptions/6f03eba7-0eca-4fa7-b97a-c9f0b9fa9b68/resourceGroups/rg-copearc-prod-test-eu01/providers/Microsoft.Storage/storageAccounts/stemrcopearcprodtest01",
+            "type": "String"
+        },
+        "virtualNetworks_vnet_copearc_uat_eu01_externalid": {
+            "defaultValue": "/subscriptions/6f03eba7-0eca-4fa7-b97a-c9f0b9fa9b68/resourceGroups/rg-copearc-prod-test-eu01/providers/Microsoft.Network/virtualNetworks/vnet-emr-copearc-prod-01",
+            "type": "String"
+        },
+        "privateDnsZones_privatelink_blob_core_windows_net_externalid": {
+            "defaultValue": "/subscriptions/6f03eba7-0eca-4fa7-b97a-c9f0b9fa9b68/resourceGroups/rg-copearc-prod-test-eu01/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2023-06-01",
+            "name": "[parameters('privateEndpoints_uat_adls_pep_name')]",
+            "location": "eastus",
+            "properties": {
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "[parameters('privateEndpoints_uat_adls_pep_name')]",
+                        "id": "[concat(resourceId('Microsoft.Network/privateEndpoints', parameters('privateEndpoints_uat_adls_pep_name')), concat('/privateLinkServiceConnections/', parameters('privateEndpoints_uat_adls_pep_name')))]",
+                        "properties": {
+                            "privateLinkServiceId": "[parameters('storageAccounts_stemrcopearcprodtest01_externalid')]",
+                            "groupIds": [
+                                "blob"
+                            ],
+                            "privateLinkServiceConnectionState": {
+                                "status": "Approved",
+                                "description": "Auto-Approved",
+                                "actionsRequired": "None"
+                            }
+                        }
+                    }
+                ],
+                "manualPrivateLinkServiceConnections": [],
+                "customNetworkInterfaceName": "[concat(parameters('privateEndpoints_uat_adls_pep_name'), '-nic')]",
+                "subnet": {
+                    "id": "[concat(parameters('virtualNetworks_vnet_copearc_uat_eu01_externalid'), '/subnets/subnet-emr-copearc-prod-02')]"
+                },
+                "ipConfigurations": [],
+                "customDnsConfigs": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+            "apiVersion": "2023-06-01",
+            "name": "[concat(parameters('privateEndpoints_uat_adls_pep_name'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', parameters('privateEndpoints_uat_adls_pep_name'))]"
+            ],
+            "properties": {
+                "privateDnsZoneConfigs": [
+                    {
+                        "name": "privatelink-blob-core-windows-net",
+                        "properties": {
+                            "privateDnsZoneId": "[parameters('privateDnsZones_privatelink_blob_core_windows_net_externalid')]"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

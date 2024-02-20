@@ -1,0 +1,275 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "subscription": {
+            "defaultValue": "",
+            "type": "string"
+        },
+        "adfName": {
+            "defaultValue": "myv2datafactory",
+            "type": "string"
+        },
+        "version": {
+            "defaultValue": "V2",
+            "type": "string"
+        },
+        "location": {
+            "defaultValue": "eastus",
+            "type": "string"
+        },
+        "tagsByResource": {
+            "type": "Object"
+        },
+        "vNetEnabled": {
+            "defaultValue": false,
+            "type": "bool"
+        },
+        "publicNetworkAccess": {
+            "defaultValue": true,
+            "type": "bool"
+        },
+        "privateEndpoints": {
+            "type": "array",
+            "metadata": {
+                "description": "Private endpoints. Empty if no private network access selected."
+            }
+        },
+        "gitConfigureLater": {
+            "defaultValue": true,
+            "type": "bool"
+        },
+        "gitRepoType": {
+            "defaultValue": "Azure DevOps Git",
+            "type": "string"
+        },
+        "gitAccountName": {
+            "defaultValue": "COPEHEALTH",
+            "type": "string"
+        },
+        "gitProjectName": {
+            "defaultValue": "EMR",
+            "type": "string"
+        },
+        "gitRepositoryName": {
+            "defaultValue": "emr-adf",
+            "type": "string"
+        },
+        "gitCollaborationBranch": {
+            "defaultValue": "SunRiver-Prod",
+            "type": "string"
+        },
+        "gitRootFolder": {
+            "defaultValue": "/",
+            "type": "string"
+        },
+        "disablePublish": {
+            "defaultValue": false,
+            "type": "bool"
+        },
+        "userAssignedIdentities": {
+            "defaultValue": {
+                "type": "SystemAssigned"
+            },
+            "type": "object"
+        },
+        "userAssignedIdentitiesStr": {
+            "defaultValue": "",
+            "type": "string"
+        },
+        "vaultBaseUrl": {
+            "defaultValue": "",
+            "type": "string"
+        },
+        "keyName": {
+            "defaultValue": "",
+            "type": "string"
+        },
+        "keyVersion": {
+            "defaultValue": "",
+            "type": "string"
+        },
+        "enableCMK": {
+            "defaultValue": false,
+            "type": "bool"
+        },
+        "cmkIdentity": {
+            "defaultValue": "",
+            "type": "string"
+        },
+        "adlsName": {
+            "defaultValue": "stemrcopearcprodtest01",
+            "type": "string"
+        },
+        "adlsManagedPE": {
+            "defaultValue": "PrivateEndpoint_EMR_ADLS-01",
+            "type": "string"
+        },
+        "adlsIRName": {
+            "defaultValue": "ManagedPrivateEndpointIR-01",
+            "type": "string"
+        },
+        "selfHostedIRName": {
+            "defaultValue": "SelfHostedSQLvmIR",
+            "type": "string"
+        },
+        "adfPEPName": {
+            "defaultValue": "adf-pep",
+            "type": "String"
+        },
+        "vnetName": {
+            "type": "String"
+        },
+        "subNetName": {
+            "type": "String"
+        }
+    },
+    "variables": {
+        "repoConfiguration": {
+            "type": "FactoryVSTSConfiguration",
+            "accountName": "[parameters('gitAccountName')]",
+            "repositoryName": "[parameters('gitRepositoryName')]",
+            "collaborationBranch": "[parameters('gitCollaborationBranch')]",
+            "rootFolder": "[parameters('gitRootFolder')]",
+            "projectName": "[parameters('gitProjectName')]",
+            "disablePublish": "[parameters('disablePublish')]"
+        },
+        "resourceIDForADF": "[concat('/subscriptions',subscription().id, '/resourceGroups/',resourceGroup().name,'/providers/Microsoft.DataFactory/factories/',parameters('adfName'))]",
+        "vnetResourceId": "[concat('/subscriptions',subscription().id, '/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Network/virtualNetworks/',parameters('vnetName'))]",
+        "subNetResourceId": "[concat(variables('vnetResourceId'),'/subnets/',parameters('subNetName'))]",
+        "blobPrivateDnsResourceId": "[concat('/subscriptions',subscription().id, '/resourceGroups/',resourceGroup().name,'/providers/Microsoft.Network/privateDnsZones/privatelink.datafactory.azure.net')]"
+    },
+    "resources": [
+        {
+            "condition": "[equals(parameters('version'), 'V2')]",
+            "type": "Microsoft.DataFactory/factories",
+            "apiVersion": "2018-06-01",
+            "name": "[parameters('adfName')]",
+            "location": "[parameters('location')]",
+            "identity": "[if(parameters('enableCMK'),json(parameters('userAssignedIdentitiesStr')), parameters('userAssignedIdentities'))]",
+            "properties": {
+                "repoConfiguration": "[variables('repoConfiguration')]",
+                "publicNetworkAccess": "[if(bool(parameters('publicNetworkAccess')), 'Enabled', 'Disabled')]",
+                "encryption": "[if(parameters('enableCMK'), json(concat('{\"identity\":{\"userAssignedIdentity\":\"', parameters('cmkIdentity'), '\"},','\"VaultBaseUrl\": \"', parameters('vaultBaseUrl'), '\",','\"KeyName\": \"', parameters('keyName'), '\",','\"KeyVersion\": \"', parameters('keyVersion'), '\"}')), json('null'))]"
+            },
+            "tags": "[ if(contains(parameters('tagsByResource'), 'Microsoft.DataFactory/factories'), parameters('tagsByResource')['Microsoft.DataFactory/factories'], json('{}')) ]",
+            "resources": [
+                {
+                    "name": "[concat(parameters('adfName'), '/default')]",
+                    "type": "Microsoft.DataFactory/factories/managedVirtualNetworks",
+                    "apiVersion": "2018-06-01",
+                    "properties": {
+                        "type": "Managed",
+                        "typeProperties": {}
+                    },
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/factories/', parameters('adfName'))]"
+                    ]
+                },
+                {
+                    "name": "[concat(parameters('adfName'), '/',parameters('selfHostedIRName'))]",
+                    "type": "Microsoft.DataFactory/factories/integrationRuntimes",
+                    "apiVersion": "2018-06-01",
+                    "properties": {
+                        "type": "SelfHosted",
+                        "typeProperties": {}
+                    },
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/factories/', parameters('adfName'))]"
+                    ]
+                },
+                {
+                    "name": "[concat(parameters('adfName'), '/',parameters('adlsIRName'))]",
+                    "type": "Microsoft.DataFactory/factories/integrationRuntimes",
+                    "apiVersion": "2018-06-01",
+                    "properties": {
+                        "type": "Managed",
+                        "managedVirtualNetwork": {
+                            "referenceName": "default",
+                            "type": "ManagedVirtualNetworkReference"
+                        },
+                        "typeProperties": {
+                            "computeProperties": {
+                                "location": "East US",
+                                "dataFlowProperties": {
+                                    "computeType": "General",
+                                    "coreCount": 8,
+                                    "timeToLive": 0
+                                }
+                            }
+                        }
+                    },
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/factories/', parameters('adfName'))]",
+                        "[concat('Microsoft.DataFactory/factories/', parameters('adfName'), '/managedVirtualNetworks/default')]"
+                    ]
+                },
+                {
+                    "name": "[concat(parameters('adfName'), '/default/',parameters('adlsManagedPE'))]",
+                    "type": "Microsoft.DataFactory/factories/managedVirtualNetworks/managedPrivateEndpoints",
+                    "apiVersion": "2018-06-01",
+                    "properties": {
+                        "privateLinkResourceId": "[resourceId(resourceGroup().name, 'Microsoft.Storage/storageAccounts/', parameters('adlsName'))]",
+                        "groupId": "dfs",
+                        "type": "Managed",
+                        "typeProperties": {}
+                    },
+                    "dependsOn": [
+                        "[concat('Microsoft.DataFactory/factories/', parameters('adfName'))]",
+                        "[concat('Microsoft.DataFactory/factories/', parameters('adfName'), '/managedVirtualNetworks/default')]"
+                    ]
+                },
+                {
+                    "type": "Microsoft.Network/privateEndpoints",
+                    "apiVersion": "2023-06-01",
+                    "name": "[parameters('adfPEPName')]",
+                    "location": "eastus",
+                    "properties": {
+                        "privateLinkServiceConnections": [
+                            {
+                                "name": "[parameters('adfPEPName')]",
+                                "id": "[concat(resourceId('Microsoft.Network/privateEndpoints', parameters('adfPEPName')), concat('/privateLinkServiceConnections/', parameters('adfPEPName')))]",
+                                "properties": {
+                                    "privateLinkServiceId": "[variables('resourceIDForADF')]",
+                                    "groupIds": [
+                                        "dataFactory"
+                                    ],
+                                    "privateLinkServiceConnectionState": {
+                                        "status": "Approved",
+                                        "description": "Auto-Approved",
+                                        "actionsRequired": "None"
+                                    }
+                                }
+                            }
+                        ],
+                        "manualPrivateLinkServiceConnections": [],
+                        "customNetworkInterfaceName": "[concat(parameters('adfPEPName'), '-nic')]",
+                        "subnet": {
+                            "id": "[variables('subNetResourceId')]"
+                        },
+                        "ipConfigurations": [],
+                        "customDnsConfigs": []
+                    }
+                },
+                {
+                    "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+                    "apiVersion": "2023-06-01",
+                    "name": "[concat(parameters('adfPEPName'), '/default')]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Network/privateEndpoints', parameters('adfPEPName'))]"
+                    ],
+                    "properties": {
+                        "privateDnsZoneConfigs": [
+                            {
+                                "name": "privatelink-datafactory-azure-net",
+                                "properties": {
+                                    "privateDnsZoneId": "[variables('adfPrivateDnsResourceId')]"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

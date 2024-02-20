@@ -1,0 +1,155 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string"
+        },
+        "workspaceName": {
+            "type": "string"
+        },
+        "tier": {
+            "defaultValue": "premium",
+            "type": "string"
+        },
+        "managedResourceGroupName": {
+            "defaultValue": "",
+            "type": "string"
+        },
+        "enableNoPublicIp": {
+            "type": "bool",
+            "defaultValue": true
+        },
+        "virtualNetworkName": {
+            "type": "string"
+        },
+        "publicSubnetName": {
+            "type": "string"
+        },
+        "publicSubnetCIDR": {
+            "type": "string"
+        },
+        "privateSubnetName": {
+            "type": "string"
+        },
+        "privateSubnetCIDR": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "managedResourceGroupName": "[if(not(empty(parameters('managedResourceGroupName'))), parameters('managedResourceGroupName'), concat('databricks-rg-', parameters('workspaceName'), '-', uniqueString(parameters('workspaceName'), resourceGroup().id)))]",
+        "trimmedMRGName": "[substring(variables('managedResourceGroupName'), 0, min(length(variables('managedResourceGroupName')), 90))]",
+        "managedResourceGroupId": "[concat(subscription().id, '/resourceGroups/', variables('trimmedMRGName'))]",
+        "nsgName": "[concat('nsg-emr-databricks-', uniqueString(parameters('workspaceName')))]",
+        "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
+        "vnetRG": "[resourceGroup().name]",
+        "vnetId": "[resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+    },
+    "resources": [
+        {
+            "apiVersion": "2023-09-15-preview",
+            "location": "[parameters('location')]",
+            "name": "[parameters('workspaceName')]",
+            "sku": {
+                "name": "[parameters('tier')]"
+            },
+            "comments": "Please do not use an existing resource group for ManagedResourceGroupId.",
+            "properties": {
+                "ManagedResourceGroupId": "[variables('managedResourceGroupId')]",
+                "parameters": {
+                    "enableNoPublicIp": {
+                        "value": "[parameters('enableNoPublicIp')]"
+                    },
+                    "customVirtualNetworkId": {
+                        "value": "[variables('vnetId')]"
+                    },
+                    "customPublicSubnetName": {
+                        "value": "[parameters('publicSubnetName')]"
+                    },
+                    "customPrivateSubnetName": {
+                        "value": "[parameters('privateSubnetName')]"
+                    }
+                },
+                "publicNetworkAccess": "Enabled",
+                "requiredNsgRules": "AllRules"
+            },
+            "type": "Microsoft.Databricks/workspaces",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgName'))]",
+                "['Microsoft.Resources/deployments/nestedTemplate']"
+            ],
+            "tags": {}
+        },
+        {
+            "apiVersion": "2019-06-01",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "location": "[parameters('location')]",
+            "name": "[variables('nsgName')]",
+            "properties": {}
+        },
+        {
+            "apiVersion": "2017-05-10",
+            "name": "nestedTemplate",
+            "type": "Microsoft.Resources/deployments",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgName'))]"
+            ],
+            "resourceGroup": "[variables('vnetRG')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "apiVersion": "2019-06-01",
+                            "type": "Microsoft.Network/virtualNetworks/subnets",
+                            "name": "[concat(parameters('virtualNetworkName'), '/',parameters('publicSubnetName'))]",
+                            "location": "[parameters('location')]",
+                            "properties": {
+                                "addressPrefix": "[parameters('publicSubnetCIDR')]",
+                                "networkSecurityGroup": {
+                                    "id": "[variables('nsgId')]"
+                                },
+                                "delegations": [
+                                    {
+                                        "name": "[concat('emr-databricks-del-', uniqueString(parameters('publicSubnetName')))]",
+                                        "properties": {
+                                            "serviceName": "Microsoft.Databricks/workspaces"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "apiVersion": "2019-06-01",
+                            "type": "Microsoft.Network/virtualNetworks/subnets",
+                            "name": "[concat(parameters('virtualNetworkName'), '/',parameters('privateSubnetName'))]",
+                            "location": "[parameters('location')]",
+                            "dependsOn": [
+                                "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'), '/subnets/', parameters('publicSubnetName'))]"
+                            ],
+                            "properties": {
+                                "addressPrefix": "[parameters('privateSubnetCIDR')]",
+                                "networkSecurityGroup": {
+                                    "id": "[variables('nsgId')]"
+                                },
+                                "delegations": [
+                                    {
+                                        "name": "[concat('emr-databricks-del-', uniqueString(parameters('privateSubnetName')))]",
+                                        "properties": {
+                                            "serviceName": "Microsoft.Databricks/workspaces"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "parameters": {}
+            }
+        }
+    ]
+}
